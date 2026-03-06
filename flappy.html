@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Flappy Clone</title>
+<style>
+body { margin:0; overflow:hidden; background:#70c5ce; }
+canvas { display:block; margin:0 auto; background:#70c5ce; }
+</style>
+</head>
+<body>
+<canvas id="game" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let bird = { x:100, y:300, vel:0, gravity:0.5, jump:-8, size:15 };
+let pipes = [];
+let frame = 0;
+let score = 0;
+let gameOver = false;
+
+function spawnPipe(){
+  let gap = 150;
+  let topHeight = Math.random()*300 + 50;
+  pipes.push({ x:400, top:topHeight, bottom:topHeight+gap, width:50 });
+}
+
+function update(){
+  if(gameOver) return;
+  frame++;
+  bird.vel += bird.gravity;
+  bird.y += bird.vel;
+
+  if(frame % 90 === 0) spawnPipe();
+
+  pipes.forEach(pipe => {
+    pipe.x -= 2;
+    if(pipe.x + pipe.width < 0){
+      score++;
+    }
+
+    if(
+      bird.x + bird.size > pipe.x &&
+      bird.x - bird.size < pipe.x + pipe.width &&
+      (bird.y - bird.size < pipe.top || bird.y + bird.size > pipe.bottom)
+    ){
+      gameOver = true;
+    }
+  });
+
+  pipes = pipes.filter(p => p.x + p.width > 0);
+
+  if(bird.y + bird.size > canvas.height || bird.y - bird.size < 0){
+    gameOver = true;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // bird
+  ctx.fillStyle = "yellow";
+  ctx.beginPath();
+  ctx.arc(bird.x, bird.y, bird.size, 0, Math.PI*2);
+  ctx.fill();
+
+  // pipes
+  ctx.fillStyle = "green";
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+    ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
+  });
+
+  ctx.fillStyle = "black";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  if(gameOver){
+    ctx.fillText("Game Over - Click to Restart", 80, 300);
+  }
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('click', () => {
+  if(gameOver){
+    bird.y = 300;
+    bird.vel = 0;
+    pipes = [];
+    score = 0;
+    frame = 0;
+    gameOver = false;
+  }
+  bird.vel = bird.jump;
+});
+
+loop();
+</script>
+</body>
+</html>
